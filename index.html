@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>yukano</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --peach:#FF8056;--peach-l:#FFF2EE;--peach-m:#FFD0BE;
+  --mint:#3DBD8F;--mint-l:#E6FAF3;
+  --sky:#4A9EF5;--sky-l:#EBF4FF;
+  --amber:#F0A020;--amber-l:#FEF5E0;
+  --purple:#7C5CF6;--purple-l:#F0ECFF;
+  --red:#E24B4A;--blue:#378ADD;--green:#1D9E75;
+  --bg:#FAFAF8;--surface:#fff;--surface2:#F5F4F1;
+  --border:rgba(0,0,0,.08);--border2:rgba(0,0,0,.14);
+  --text:#1A1A18;--text2:#6B6A66;--text3:#A09E9A;
+  --r:12px;--rs:8px;--sh:0 2px 12px rgba(0,0,0,.07);--shL:0 8px 32px rgba(0,0,0,.12)
+}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto;padding-bottom:90px}
+
+/* HEADER */
+.hdr{background:var(--peach);padding:18px 18px 14px;position:sticky;top:0;z-index:100}
+.hdr-top{display:flex;justify-content:space-between;align-items:flex-start}
+.hdr h1{font-size:19px;font-weight:700;color:#fff;letter-spacing:-.5px}
+.hdr .sub{font-size:11px;color:rgba(255,255,255,.8);margin-top:2px}
+.streak{background:rgba(255,255,255,.22);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;color:#fff;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;margin-left:4px}
+.sync-dot.off{background:#f87171}
+
+/* NAV */
+.nav{background:var(--surface);display:flex;border-bottom:1px solid var(--border);position:sticky;top:64px;z-index:99;box-shadow:var(--sh)}
+.nb{flex:1;border:none;background:transparent;padding:10px 2px 8px;font-size:10px;font-family:inherit;color:var(--text3);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;border-bottom:2.5px solid transparent;transition:color .15s,border-color .15s}
+.nb i{font-size:20px}
+.nb.on{color:var(--peach);border-bottom-color:var(--peach)}
+
+/* TABS */
+.tab{display:none;padding:16px}
+.tab.on{display:block}
+#tab-ai{padding:0;display:flex;flex-direction:column;height:calc(100vh - 154px)}
+
+/* CARD */
+.card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:16px;margin-bottom:14px;box-shadow:var(--sh)}
+.card-title{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+
+/* SUBJECTS */
+.sg{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.sb{border:1.5px solid var(--border2);border-radius:var(--rs);background:var(--surface);padding:10px 4px;font-size:11px;font-weight:700;font-family:inherit;color:var(--text2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .15s}
+.sb i{font-size:18px}
+.sb.k{border-color:var(--red);color:var(--red);background:#fff0f0}
+.sb.s{border-color:var(--blue);color:var(--blue);background:#eff6ff}
+.sb.e{border-color:var(--green);color:var(--green);background:#edfaf4}
+.sb.r{border-color:var(--purple);color:var(--purple);background:#f3f0ff}
+.sb.sh{border-color:var(--amber);color:var(--amber);background:#fef6e6}
+
+/* TIMER */
+.tface{background:var(--surface2);border-radius:var(--r);padding:26px 20px;text-align:center;margin:14px 0;border:1px solid var(--border)}
+.tlbl{font-size:12px;color:var(--text3);margin-bottom:6px}
+.tnum{font-size:54px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-3px;line-height:1;color:var(--text);margin-bottom:6px;transition:color .2s}
+.tnum.on{color:var(--peach)}
+.tday{font-size:12px;color:var(--text3)}
+.btn-row{display:flex;gap:10px;justify-content:center}
+.bp{background:var(--peach);color:#fff;border:none;border-radius:var(--rs);padding:13px 30px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 3px 12px rgba(255,128,86,.35);transition:opacity .15s,transform .1s}
+.bp:active{transform:scale(.97)}
+.bs{background:var(--surface);color:var(--text2);border:1px solid var(--border2);border-radius:var(--rs);padding:13px 18px;font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px}
+
+/* LOG */
+.li{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:var(--rs);margin-bottom:6px;font-size:13px;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.ldot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.lempty{font-size:13px;color:var(--text3);text-align:center;padding:20px 0}
+
+/* STATS */
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.metric{background:var(--surface2);border-radius:var(--rs);padding:14px 10px;text-align:center}
+.mlbl{font-size:10px;color:var(--text3);margin-bottom:5px}
+.mval{font-size:24px;font-weight:700;color:var(--text);line-height:1}
+.munit{font-size:10px;color:var(--text3);margin-top:2px}
+.bar-chart{display:flex;align-items:flex-end;gap:5px;height:90px;margin-bottom:4px}
+.bc{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.bf{width:100%;border-radius:4px 4px 0 0;min-height:3px;background:var(--peach);opacity:.75}
+.bf.td{opacity:1}
+.bday{font-size:10px;color:var(--text3)}
+.bval{font-size:9px;color:var(--text3)}
+.sr{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px}
+.srn{width:36px;color:var(--text2);font-weight:500}
+.srbg{flex:1;background:var(--surface2);border-radius:4px;height:8px;overflow:hidden}
+.srf{height:100%;border-radius:4px}
+.srv{width:28px;text-align:right;color:var(--text3);font-size:11px}
+.badges{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.badge{text-align:center;padding:12px 4px;border-radius:var(--rs);border:1px solid var(--border);background:var(--surface2)}
+.badge.ok{border-color:var(--amber);background:var(--amber-l)}
+.bi{font-size:24px;margin-bottom:4px}
+.bn{font-size:10px;color:var(--text3)}
+.badge.ok .bn{color:#8B6000;font-weight:700}
+
+/* PLAN */
+.ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.pt{font-size:16px;font-weight:700}
+.badd{background:var(--peach);color:#fff;border:none;border-radius:var(--rs);padding:7px 14px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:4px}
+.dc{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);margin-bottom:10px;overflow:hidden;box-shadow:var(--sh)}
+.dh{padding:9px 14px;background:var(--surface2);display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;border-bottom:1px solid var(--border)}
+.dd{font-size:11px;color:var(--mint);font-weight:500}
+.ti2{display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:13px;border-bottom:1px solid var(--border)}
+.ti2:last-child{border-bottom:none}
+.tck{width:20px;height:20px;border-radius:50%;border:2px solid var(--border2);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.tck.done{background:var(--mint);border-color:var(--mint)}
+.tck.done::after{content:'✓';font-size:11px;color:#fff;font-weight:700}
+.ttx{flex:1;line-height:1.4}
+.ttx.done{text-decoration:line-through;color:var(--text3)}
+.ttag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.aiadv{background:var(--purple-l);border:1px solid rgba(124,92,246,.3);border-radius:var(--r);padding:14px;margin-top:6px}
+.aiadv-t{font-size:12px;font-weight:700;color:var(--purple);margin-bottom:6px}
+.aiadv-b{font-size:12px;color:#4a3a90;line-height:1.7}
+
+/* AI CHAT */
+.chat-area{flex:1;overflow-y:auto;padding:16px}
+.msg{display:flex;gap:8px;align-items:flex-start;margin-bottom:14px;animation:fadeIn .25s}
+.msg.user{flex-direction:row-reverse}
+.av{width:30px;height:30px;border-radius:50%;background:var(--peach);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;flex-shrink:0}
+.av.u{background:var(--sky)}
+.bubble{background:var(--surface2);border-radius:4px 12px 12px 12px;padding:10px 14px;font-size:13px;line-height:1.7;max-width:82%;border:1px solid var(--border);color:var(--text)}
+.bubble.u{background:var(--sky);color:#fff;border:none;border-radius:12px 4px 12px 12px}
+.bubble.ld{color:var(--text3)}
+.qa{padding:8px 14px;display:flex;flex-wrap:wrap;gap:6px;background:var(--surface2);border-top:1px solid var(--border)}
+.qb{font-size:11px;padding:5px 11px;border-radius:14px;border:1px solid var(--border2);background:var(--surface);color:var(--text2);cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .12s}
+.qb:active{background:var(--peach-l);border-color:var(--peach);color:var(--peach)}
+.cir{padding:10px 14px;display:flex;gap:8px;background:var(--surface);border-top:1px solid var(--border)}
+.cir textarea{flex:1;resize:none;border-radius:var(--rs);border:1px solid var(--border2);padding:9px 12px;font-size:13px;font-family:inherit;background:var(--surface2);color:var(--text);height:42px;line-height:1.5;outline:none}
+.send{background:var(--peach);color:#fff;border:none;border-radius:var(--rs);width:42px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+
+/* FAMILY */
+.gc{background:var(--amber-l);border:1px solid rgba(240,160,32,.4);border-radius:var(--r);padding:16px;margin-bottom:16px}
+.gl{font-size:11px;font-weight:700;color:#8B6000;margin-bottom:4px}
+.gt{font-size:16px;font-weight:700;color:#5A3A00;margin-bottom:12px}
+.gbg{background:rgba(240,160,32,.25);border-radius:6px;height:10px;overflow:hidden;margin-bottom:6px}
+.gf{height:100%;background:var(--amber);border-radius:6px;transition:width .5s}
+.glbl{font-size:11px;color:#8B6000}
+.wr{display:flex;gap:8px;margin-bottom:10px}
+.wb{padding:5px 14px;border-radius:14px;border:1px solid var(--border2);background:transparent;font-size:12px;font-weight:700;font-family:inherit;color:var(--text2);cursor:pointer;transition:all .12s}
+.wb.ko  {border-color:var(--peach);color:var(--peach);background:var(--peach-l)}
+.wb.papa{border-color:var(--sky);color:var(--sky);background:var(--sky-l)}
+.wb.mama{border-color:var(--mint);color:var(--mint);background:var(--mint-l)}
+.cr{display:flex;gap:8px}
+.cr input{flex:1;border-radius:var(--rs);border:1px solid var(--border2);padding:9px 12px;font-size:13px;font-family:inherit;background:var(--surface2);color:var(--text);outline:none}
+.postb{background:var(--peach);color:#fff;border:none;border-radius:var(--rs);padding:0 18px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer}
+.fc{display:flex;gap:10px;margin-bottom:14px;animation:fadeIn .3s}
+.fca{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.fca.ko  {background:var(--peach-l);color:#993C1D}
+.fca.papa{background:var(--sky-l);color:#185FA5}
+.fca.mama{background:var(--mint-l);color:#0F6E56}
+.fcb{flex:1}
+.fcm{font-size:11px;color:var(--text3);margin-bottom:3px;display:flex;gap:6px}
+.fcn{font-weight:700;color:var(--text2)}
+.fcbl{background:var(--surface2);border:1px solid var(--border);border-radius:4px 12px 12px 12px;padding:9px 12px;font-size:13px;line-height:1.6}
+.seclbl{font-size:12px;font-weight:700;color:var(--text3);margin-bottom:12px;letter-spacing:.5px}
+
+/* MODAL */
+.mbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center}
+.mbg.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--r) var(--r) 0 0;padding:20px;width:100%;max-width:480px;box-shadow:var(--shL)}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:14px}
+.modal label{font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:6px;margin-top:12px}
+.modal select,.modal input[type=text]{width:100%;border:1px solid var(--border2);border-radius:var(--rs);padding:10px 12px;font-size:14px;font-family:inherit;background:var(--surface2);color:var(--text);outline:none}
+.mbtns{display:flex;gap:10px;margin-top:18px}
+.mbtns button{flex:1;padding:12px;border-radius:var(--rs);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;border:1px solid var(--border2)}
+.mbtns .ok{background:var(--peach);color:#fff;border-color:var(--peach)}
+.mbtns .cl{background:var(--surface2);color:var(--text2)}
+
+/* SETUP PANEL */
+.setup{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px}
+.setup-box{background:var(--surface);border-radius:var(--r);padding:24px;width:100%;max-width:440px;box-shadow:var(--shL)}
+.setup-box h2{font-size:18px;font-weight:700;margin-bottom:8px}
+.setup-box p{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:16px}
+.setup-box label{font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px;margin-top:12px}
+.setup-box input{width:100%;border:1px solid var(--border2);border-radius:var(--rs);padding:10px 12px;font-size:13px;font-family:inherit;background:var(--surface2);color:var(--text);outline:none}
+.setup-box .hint{font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5}
+.sbtn{width:100%;margin-top:18px;background:var(--peach);color:#fff;border:none;border-radius:var(--rs);padding:14px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer}
+.step-badge{display:inline-block;background:var(--peach);color:#fff;border-radius:50%;width:22px;height:22px;font-size:12px;font-weight:700;line-height:22px;text-align:center;margin-right:6px}
+</style>
+</head>
+<body>
+
+<!-- FIREBASE SETUP PANEL -->
+<div class="setup" id="setup-panel">
+  <div class="setup-box">
+    <h2>🔥 Firebase設定</h2>
+    <p>家族でリアルタイム共有するために、Firebaseの設定値を入力してください。<br>一度設定すればOKです。</p>
+
+    <div style="background:var(--surface2);border-radius:var(--rs);padding:14px;margin-bottom:16px;font-size:12px;line-height:1.8;color:var(--text2)">
+      <b style="color:var(--text)">Firebaseの設定値の取り方（無料・3分）</b><br>
+      <span class="step-badge">1</span><a href="https://console.firebase.google.com" target="_blank" style="color:var(--peach)">console.firebase.google.com</a> を開く<br>
+      <span class="step-badge">2</span>「プロジェクトを追加」→ 名前を入力して作成<br>
+      <span class="step-badge">3</span>「＜/＞」（Webアプリ）をクリック → アプリ登録<br>
+      <span class="step-badge">4</span>表示された <code style="background:var(--border);padding:1px 4px;border-radius:3px">firebaseConfig</code> の各値をコピー<br>
+      <span class="step-badge">5</span>左メニュー「Realtime Database」→「データベースを作成」→ テストモードで開始
+    </div>
+
+    <label>API Key</label>
+    <input type="text" id="cfg-apiKey" placeholder="AIzaSy..." />
+    <label>Auth Domain</label>
+    <input type="text" id="cfg-authDomain" placeholder="your-app.firebaseapp.com" />
+    <label>Database URL</label>
+    <input type="text" id="cfg-dbUrl" placeholder="https://your-app-default-rtdb.firebaseio.com" />
+    <label>Project ID</label>
+    <input type="text" id="cfg-projectId" placeholder="your-app-12345" />
+    <div class="hint" style="margin-top:8px">※ 設定値はこの端末のみに保存されます。他のご家族も同じ設定値を入力してください。</div>
+
+    <button class="sbtn" onclick="saveConfig()">この設定で接続する</button>
+    <button onclick="skipSetup()" style="width:100%;margin-top:10px;background:transparent;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:8px">あとで設定する（ローカル保存モードで使う）</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-top">
+    <div>
+      <h1>📖 yukano</h1>
+      <div class="sub">高校受験まで一緒に頑張ろう！</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <div class="streak">🔥 <span id="streak-n">3</span>日連続</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.8);display:flex;align-items:center;gap:4px">
+        <span class="sync-dot" id="sync-dot"></span>
+        <span id="sync-lbl">接続中...</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nb on" onclick="sw('timer',this)"><i class="ti ti-player-play"></i>タイマー</button>
+  <button class="nb" onclick="sw('stats',this)"><i class="ti ti-chart-bar"></i>記録</button>
+  <button class="nb" onclick="sw('plan',this)"><i class="ti ti-calendar"></i>計画</button>
+  <button class="nb" onclick="sw('ai',this)"><i class="ti ti-robot"></i>AI先生</button>
+  <button class="nb" onclick="sw('family',this)"><i class="ti ti-heart"></i>家族</button>
+</nav>
+
+<!-- TIMER TAB -->
+<div id="tab-timer" class="tab on">
+  <div class="card">
+    <div class="card-title"><i class="ti ti-books"></i>教科を選んでスタート</div>
+    <div class="sg">
+      <button class="sb" id="sb-k"  onclick="selS('k')"><i class="ti ti-pencil"></i>国語</button>
+      <button class="sb" id="sb-s"  onclick="selS('s')"><i class="ti ti-math-function"></i>数学</button>
+      <button class="sb" id="sb-e"  onclick="selS('e')"><i class="ti ti-language"></i>英語</button>
+      <button class="sb" id="sb-r"  onclick="selS('r')"><i class="ti ti-flask"></i>理科</button>
+      <button class="sb" id="sb-sh" onclick="selS('sh')"><i class="ti ti-world"></i>社会</button>
+    </div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="tface">
+      <div class="tlbl" id="tlbl">教科を選んでスタートしよう</div>
+      <div class="tnum" id="tnum">00:00:00</div>
+      <div class="tday">今日の合計: <span id="today-total">0</span>分</div>
+    </div>
+    <div style="padding:16px;border-top:1px solid var(--border)">
+      <div class="btn-row">
+        <button class="bp" id="btn-go" onclick="toggleTimer()"><i class="ti ti-player-play" id="go-icon"></i><span id="go-lbl">スタート</span></button>
+        <button class="bs" onclick="resetTimer()"><i class="ti ti-player-stop"></i>リセット</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-list"></i>今日の学習ログ <span style="margin-left:auto;font-size:11px;color:var(--mint);font-weight:500" id="live-badge">● LIVE</span></div>
+    <div id="log-list"><div class="lempty">まだ記録なし。さあ始めよう！</div></div>
+  </div>
+</div>
+
+<!-- STATS TAB -->
+<div id="tab-stats" class="tab">
+  <div class="metrics">
+    <div class="metric"><div class="mlbl">今週の合計</div><div class="mval" id="sw">0</div><div class="munit">時間</div></div>
+    <div class="metric"><div class="mlbl">月間合計</div><div class="mval" id="sm">0</div><div class="munit">時間</div></div>
+    <div class="metric"><div class="mlbl">1日平均</div><div class="mval" id="sa">0</div><div class="munit">時間</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-chart-bar"></i>今週の学習時間（時間）</div>
+    <div class="bar-chart" id="bar-chart"></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-chart-pie"></i>教科別（今月）</div>
+    <div id="subj-bd"></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-medal"></i>獲得バッジ</div>
+    <div class="badges" id="badge-grid"></div>
+  </div>
+</div>
+
+<!-- PLAN TAB -->
+<div id="tab-plan" class="tab">
+  <div class="ph">
+    <div class="pt">今週の計画</div>
+    <button class="badd" onclick="openModal()"><i class="ti ti-plus"></i>追加</button>
+  </div>
+  <div id="plan-cards"></div>
+  <div class="aiadv">
+    <div class="aiadv-t">🤖 AIアドバイス</div>
+    <div class="aiadv-b">今週は英語と数学が少なめです。明日の放課後に英語30分追加するとバランスが良くなります。苦手な分野から先に取り組むと効率アップ！</div>
+  </div>
+</div>
+
+<!-- AI TAB -->
+<div id="tab-ai" class="tab">
+  <div class="chat-area" id="chat-area">
+    <div class="msg">
+      <div class="av"><i class="ti ti-robot"></i></div>
+      <div class="bubble">こんにちは！わからないことは何でも聞いてね。問題の解き方・暗記のコツ・やる気が出ない時もOK。一緒に頑張ろう！</div>
+    </div>
+  </div>
+  <div class="qa">
+    <button class="qb" onclick="qask('数学の二次方程式のコツを中学生向けに教えてください')">数学コツ</button>
+    <button class="qb" onclick="qask('英語の長文読解が苦手です。コツを教えてください')">英語長文</button>
+    <button class="qb" onclick="qask('都道府県の覚え方を面白く教えてください')">暗記法</button>
+    <button class="qb" onclick="qask('高校受験勉強のやる気が出ません。励ましてください')">やる気UP</button>
+    <button class="qb" onclick="qask('この問題の解き方を分かりやすく教えてください：')">問題を解く</button>
+  </div>
+  <div class="cir">
+    <textarea id="ai-inp" placeholder="質問を入力..." onkeydown="akey(event)"></textarea>
+    <button class="send" onclick="sendMsg()"><i class="ti ti-send"></i></button>
+  </div>
+</div>
+
+<!-- FAMILY TAB -->
+<div id="tab-family" class="tab">
+  <div class="gc">
+    <div class="gl">🎯 みんなの目標</div>
+    <div class="gt" id="goal-txt">○○高校 合格！</div>
+    <div class="gbg"><div class="gf" id="goal-bar" style="width:35%"></div></div>
+    <div class="glbl" id="goal-lbl">受験まで約180日・累積 0時間 / 目標 300時間</div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-message-circle"></i>応援メッセージを投稿</div>
+    <div class="wr">
+      <button class="wb" id="w-ko"   onclick="selW('ko')">本人</button>
+      <button class="wb papa" id="w-papa" onclick="selW('papa')">パパ</button>
+      <button class="wb" id="w-mama" onclick="selW('mama')">ママ</button>
+    </div>
+    <div class="cr">
+      <input type="text" id="fc-inp" placeholder="メッセージを入力..." onkeydown="if(event.key==='Enter')postFC()" />
+      <button class="postb" onclick="postFC()">投稿</button>
+    </div>
+  </div>
+  <div class="seclbl">みんなのメッセージ</div>
+  <div id="fc-feed"></div>
+</div>
+
+<!-- MODAL -->
+<div class="mbg" id="modal-bg">
+  <div class="modal">
+    <h3>タスクを追加</h3>
+    <label>曜日</label>
+    <select id="m-day"><option>月曜日</option><option>火曜日</option><option>水曜日</option><option>木曜日</option><option>金曜日</option><option>土曜日</option><option>日曜日</option></select>
+    <label>教科</label>
+    <select id="m-subj"><option value="k">国語</option><option value="s">数学</option><option value="e">英語</option><option value="r">理科</option><option value="sh">社会</option></select>
+    <label>内容</label>
+    <input type="text" id="m-txt" placeholder="例：数学 p.32-34 二次方程式" />
+    <div class="mbtns">
+      <button class="cl" onclick="closeModal()">キャンセル</button>
+      <button class="ok" onclick="addTask()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, push, set, onValue, update } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+// ── 定数 ──────────────────────────────
+const SUBJ  = {k:'国語',s:'数学',e:'英語',r:'理科',sh:'社会'};
+const SCOL  = {k:'#E24B4A',s:'#378ADD',e:'#1D9E75',r:'#7C5CF6',sh:'#F0A020'};
+const WEEK  = ['月','火','水','木','金','土','日'];
+const todayI= (new Date().getDay()+6)%7;
+const BADGES=[
+  {icon:'🔥',name:'3日連続',  earned:true},
+  {icon:'⏱️',name:'10時間達成',earned:true},
+  {icon:'📐',name:'数学攻略', earned:true},
+  {icon:'🌟',name:'7日連続',  earned:false},
+  {icon:'💯',name:'50時間達成',earned:false},
+  {icon:'🎯',name:'全教科制覇',earned:false},
+  {icon:'🏆',name:'100時間達成',earned:false},
+  {icon:'🎓',name:'合格まで1か月',earned:false}
+];
+
+// ── ローカル状態（Firebase未設定時のフォールバック） ──
+let localState = JSON.parse(localStorage.getItem('koko-local')||'null') || {
+  logs:[],todayMins:0,streak:3,
+  weekH:[0,0,0,0,0,0,0],monthH:{k:0,s:0,e:0,r:0,sh:0},totalH:0,
+  planData:[
+    {day:'月曜日',tasks:[{text:'数学：二次方程式 p.32-34',subj:'s',done:false},{text:'英語：単語テスト50問',subj:'e',done:false}]},
+    {day:'火曜日',tasks:[{text:'国語：読解問題1セット',subj:'k',done:false},{text:'理科：化学変化まとめ',subj:'r',done:false}]},
+    {day:'水曜日',tasks:[{text:'数学：練習問題 p.35-36',subj:'s',done:false}]},
+    {day:'木曜日',tasks:[{text:'英語：長文読解1問',subj:'e',done:false}]}
+  ]
+};
+function saveLocal(){ localStorage.setItem('koko-local',JSON.stringify(localState)); }
+
+// ── Firebase 接続 ──────────────────────
+let db = null, fbReady = false;
+let fbLogs=[], fbPlan=localState.planData, fbMessages=[];
+let fbWeekH=[0,0,0,0,0,0,0], fbMonthH={k:0,s:0,e:0,r:0,sh:0}, fbTotalH=0;
+
+function initFirebase(){
+  const cfg = {
+    apiKey:     localStorage.getItem('fb-apiKey'),
+    authDomain: localStorage.getItem('fb-authDomain'),
+    databaseURL:localStorage.getItem('fb-dbUrl'),
+    projectId:  localStorage.getItem('fb-projectId'),
+  };
+  if(!cfg.apiKey||!cfg.databaseURL) return;
+  try{
+    const app = initializeApp(cfg);
+    db = getDatabase(app);
+    fbReady = true;
+    setSyncStatus(true);
+    subscribeAll();
+  }catch(e){ console.error(e); setSyncStatus(false); }
+}
+
+function setSyncStatus(ok){
+  document.getElementById('sync-dot').className = 'sync-dot'+(ok?'':' off');
+  document.getElementById('sync-lbl').textContent = ok?'リアルタイム同期中':'ローカル保存';
+}
+
+function subscribeAll(){
+  // logs
+  onValue(ref(db,'logs'), snap=>{
+    fbLogs=[];
+    snap.forEach(c=>fbLogs.push({...c.val(),id:c.key}));
+    fbLogs.sort((a,b)=>b.ts-a.ts);
+    // 統計再計算
+    fbWeekH=[0,0,0,0,0,0,0]; fbMonthH={k:0,s:0,e:0,r:0,sh:0}; fbTotalH=0;
+    const now=Date.now(), weekAgo=now-7*864e5;
+    const monthAgo=now-30*864e5;
+    fbLogs.forEach(l=>{
+      fbTotalH+=l.mins/60;
+      if(l.ts>monthAgo) fbMonthH[l.subj]=(fbMonthH[l.subj]||0)+l.mins/60;
+      if(l.ts>weekAgo){
+        const d=(new Date(l.ts).getDay()+6)%7;
+        fbWeekH[d]=(fbWeekH[d]||0)+l.mins/60;
+      }
+    });
+    // 今日の合計
+    const today=new Date().toDateString();
+    const todayMins=fbLogs.filter(l=>new Date(l.ts).toDateString()===today).reduce((a,l)=>a+l.mins,0);
+    document.getElementById('today-total').textContent=todayMins;
+    renderLogs();
+    updateGoalBar();
+    if(document.getElementById('tab-stats').classList.contains('on')) renderStats();
+  });
+  // plan
+  onValue(ref(db,'plan'), snap=>{
+    const v=snap.val();
+    if(v) fbPlan=v;
+    if(document.getElementById('tab-plan').classList.contains('on')) renderPlan();
+  });
+  // messages
+  onValue(ref(db,'messages'), snap=>{
+    fbMessages=[];
+    snap.forEach(c=>fbMessages.push({...c.val(),id:c.key}));
+    fbMessages.sort((a,b)=>b.ts-a.ts);
+    if(document.getElementById('tab-family').classList.contains('on')) renderFamily();
+  });
+}
+
+// ── CONFIG SAVE ──────────────────────
+window.saveConfig = function(){
+  const keys=['apiKey','authDomain','dbUrl','projectId'];
+  keys.forEach(k=>{
+    const v=document.getElementById('cfg-'+k).value.trim();
+    if(v) localStorage.setItem('fb-'+k,v);
+  });
+  document.getElementById('setup-panel').style.display='none';
+  initFirebase();
+};
+window.skipSetup = function(){
+  document.getElementById('setup-panel').style.display='none';
+  setSyncStatus(false);
+};
+
+// ── NAV ──────────────────────────────
+window.sw = function(name,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('tab-'+name).classList.add('on');
+  btn.classList.add('on');
+  if(name==='stats') renderStats();
+  if(name==='plan')  renderPlan();
+  if(name==='family') renderFamily();
+};
+
+// ── TIMER ─────────────────────────────
+let selKey=null, running=false, iv=null, secs=0;
+
+window.selS = function(k){
+  selKey=k;
+  document.querySelectorAll('.sb').forEach(b=>{ b.className='sb'; });
+  document.getElementById('sb-'+k).classList.add(k);
+  document.getElementById('tlbl').textContent=SUBJ[k]+' の勉強中';
+};
+
+window.toggleTimer = function(){
+  if(!selKey){ alert('教科を選んでください'); return; }
+  if(!running){
+    running=true;
+    document.getElementById('go-icon').className='ti ti-player-pause';
+    document.getElementById('go-lbl').textContent='一時停止';
+    document.getElementById('tnum').classList.add('on');
+    iv=setInterval(()=>{ secs++; document.getElementById('tnum').textContent=fmt(secs); },1000);
+  } else {
+    running=false;
+    clearInterval(iv);
+    document.getElementById('go-icon').className='ti ti-player-play';
+    document.getElementById('go-lbl').textContent='スタート';
+    document.getElementById('tnum').classList.remove('on');
+    if(secs>=60){
+      const mins=Math.floor(secs/60);
+      const entry={subj:selKey,mins,ts:Date.now(),time:new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})};
+      if(fbReady && db){
+        push(ref(db,'logs'),entry);
+      } else {
+        localState.logs.unshift(entry);
+        localState.todayMins+=mins;
+        localState.monthH[selKey]=(localState.monthH[selKey]||0)+mins/60;
+        localState.weekH[todayI]=(localState.weekH[todayI]||0)+mins/60;
+        localState.totalH+=mins/60;
+        saveLocal();
+        renderLogs(); updateGoalBar();
+      }
+    }
+  }
+};
+
+window.resetTimer = function(){
+  running=false; clearInterval(iv); secs=0;
+  document.getElementById('tnum').textContent='00:00:00';
+  document.getElementById('tnum').classList.remove('on');
+  document.getElementById('go-icon').className='ti ti-player-play';
+  document.getElementById('go-lbl').textContent='スタート';
+};
+
+function fmt(s){ return String(Math.floor(s/3600)).padStart(2,'0')+':'+String(Math.floor((s%3600)/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+
+function getLogs(){ return fbReady ? fbLogs : localState.logs; }
+
+function renderLogs(){
+  const logs=getLogs().slice(0,10);
+  const el=document.getElementById('log-list');
+  if(!logs.length){ el.innerHTML='<div class="lempty">まだ記録なし。さあ始めよう！</div>'; return; }
+  el.innerHTML=logs.map(l=>`
+    <div class="li">
+      <div class="ldot" style="background:${SCOL[l.subj]}"></div>
+      <span style="font-weight:700;color:${SCOL[l.subj]}">${SUBJ[l.subj]}</span>
+      <span style="flex:1;font-size:12px;color:var(--text3)">${l.time||''}</span>
+      <span style="font-weight:700">${l.mins}分</span>
+    </div>`).join('');
+  const today=new Date().toDateString();
+  const todayMins=logs.filter(l=>new Date(l.ts).toDateString()===today).reduce((a,l)=>a+l.mins,0);
+  document.getElementById('today-total').textContent=todayMins;
+}
+
+// ── STATS ─────────────────────────────
+function renderStats(){
+  const wh = fbReady ? fbWeekH : localState.weekH;
+  const mh = fbReady ? fbMonthH : localState.monthH;
+  const th = fbReady ? fbTotalH : localState.totalH;
+  const weekSum=wh.reduce((a,b)=>a+b,0);
+  document.getElementById('sw').textContent=weekSum.toFixed(1);
+  document.getElementById('sm').textContent=th.toFixed(1);
+  const activeDays=wh.filter(h=>h>0).length||1;
+  document.getElementById('sa').textContent=(weekSum/activeDays).toFixed(1);
+
+  const maxH=Math.max(...wh,.1);
+  document.getElementById('bar-chart').innerHTML=wh.map((v,i)=>`
+    <div class="bc">
+      <div class="bval">${v>0?v.toFixed(1):''}</div>
+      <div class="bf${i===todayI?' td':''}" style="height:${Math.max(v/maxH*76,3)}px;${v===0?'opacity:.15':''}"></div>
+      <div class="bday" style="font-weight:${i===todayI?700:400}">${WEEK[i]}</div>
+    </div>`).join('');
+
+  const maxS=Math.max(...Object.values(mh),.1);
+  document.getElementById('subj-bd').innerHTML=Object.entries(mh).map(([k,h])=>`
+    <div class="sr">
+      <div class="srn">${SUBJ[k]}</div>
+      <div class="srbg"><div class="srf" style="width:${Math.round(h/maxS*100)}%;background:${SCOL[k]};opacity:.75"></div></div>
+      <div class="srv">${h.toFixed(1)}h</div>
+    </div>`).join('');
+
+  document.getElementById('badge-grid').innerHTML=BADGES.map(b=>`
+    <div class="badge${b.earned?' ok':''}">
+      <div class="bi" style="${b.earned?'':'opacity:.25'}">${b.icon}</div>
+      <div class="bn">${b.name}</div>
+    </div>`).join('');
+}
+
+// ── PLAN ──────────────────────────────
+function getPlan(){ return fbReady ? (Array.isArray(fbPlan)?fbPlan:Object.values(fbPlan)) : localState.planData; }
+
+function renderPlan(){
+  const plan=getPlan();
+  document.getElementById('plan-cards').innerHTML=plan.map((d,di)=>{
+    const tasks=Array.isArray(d.tasks)?d.tasks:Object.values(d.tasks||{});
+    const done=tasks.filter(t=>t.done).length;
+    return `<div class="dc">
+      <div class="dh"><span>${d.day}</span><span class="dd">${done}/${tasks.length} 完了</span></div>
+      ${tasks.map((t,ti)=>`
+        <div class="ti2">
+          <div class="tck${t.done?' done':''}" onclick="toggleTask(${di},${ti})"></div>
+          <div class="ttx${t.done?' done':''}">${t.text}</div>
+          <div class="ttag" style="background:${SCOL[t.subj]}20;color:${SCOL[t.subj]}">${SUBJ[t.subj]}</div>
+        </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+window.toggleTask = function(di,ti){
+  const plan=getPlan();
+  const tasks=Array.isArray(plan[di].tasks)?plan[di].tasks:Object.values(plan[di].tasks);
+  tasks[ti].done=!tasks[ti].done;
+  if(fbReady && db){
+    set(ref(db,'plan'),plan);
+  } else {
+    localState.planData[di].tasks[ti].done=tasks[ti].done;
+    saveLocal(); renderPlan();
+  }
+};
+
+window.openModal  = ()=>document.getElementById('modal-bg').classList.add('open');
+window.closeModal = ()=>document.getElementById('modal-bg').classList.remove('open');
+
+window.addTask = function(){
+  const day=document.getElementById('m-day').value;
+  const subj=document.getElementById('m-subj').value;
+  const text=document.getElementById('m-txt').value.trim();
+  if(!text){ alert('内容を入力してください'); return; }
+  const plan=getPlan();
+  let d=plan.find(x=>x.day===day);
+  if(!d){ d={day,tasks:[]}; plan.push(d); }
+  const tasks=Array.isArray(d.tasks)?d.tasks:Object.values(d.tasks||{});
+  tasks.push({text,subj,done:false});
+  d.tasks=tasks;
+  if(fbReady && db){
+    set(ref(db,'plan'),plan);
+  } else {
+    saveLocal(); renderPlan();
+  }
+  closeModal();
+  document.getElementById('m-txt').value='';
+};
+
+// ── AI ────────────────────────────────
+let chatHist=[];
+
+window.qask = function(q){
+  document.getElementById('ai-inp').value=q;
+  document.getElementById('ai-inp').focus();
+};
+window.akey = function(e){
+  if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendMsg(); }
+};
+
+window.sendMsg = async function(){
+  const inp=document.getElementById('ai-inp');
+  const text=inp.value.trim();
+  if(!text) return;
+  inp.value='';
+  chatHist.push({role:'user',content:text});
+  const area=document.getElementById('chat-area');
+  area.insertAdjacentHTML('beforeend',`
+    <div class="msg user"><div class="av u"><i class="ti ti-user"></i></div><div class="bubble u">${text}</div></div>`);
+  const lid='ld'+Date.now();
+  area.insertAdjacentHTML('beforeend',`
+    <div class="msg" id="${lid}"><div class="av"><i class="ti ti-robot"></i></div><div class="bubble ld">考え中...</div></div>`);
+  area.scrollTop=area.scrollHeight;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',max_tokens:1000,
+        system:`あなたは中学3年生の高校受験勉強をサポートするAI家庭教師「AI先生」です。
+優しく明るく励ましながら教えてください。難しい言葉は避け具体例で分かりやすく。
+間違いを恐れず何でも聞ける雰囲気を大切に。回答は300字以内でコンパクトに。
+やる気を引き出す一言を最後に添えてください。`,
+        messages:chatHist
+      })
+    });
+    const data=await res.json();
+    const reply=data.content?.[0]?.text||'うまく答えられませんでした。もう一度聞いてみてね！';
+    chatHist.push({role:'assistant',content:reply});
+    document.querySelector(`#${lid} .bubble`).textContent=reply;
+    document.querySelector(`#${lid} .bubble`).classList.remove('ld');
+  }catch(e){
+    document.querySelector(`#${lid} .bubble`).textContent='エラーが発生しました。もう一度試してね。';
+  }
+  area.scrollTop=area.scrollHeight;
+};
+
+// ── FAMILY ────────────────────────────
+let selWho='papa';
+
+window.selW = function(w){
+  selWho=w;
+  ['ko','papa','mama'].forEach(x=>{
+    document.getElementById('w-'+x).className='wb'+(x===w?' '+x:'');
+  });
+};
+
+window.postFC = function(){
+  const inp=document.getElementById('fc-inp');
+  const txt=inp.value.trim();
+  if(!txt) return;
+  const names={ko:'本人',papa:'パパ',mama:'ママ'};
+  const now=new Date();
+  const entry={who:selWho,name:names[selWho],time:now.getHours()+':'+String(now.getMinutes()).padStart(2,'0'),text:txt,ts:Date.now()};
+  if(fbReady && db){
+    push(ref(db,'messages'),entry);
+  } else {
+    localState.logs; // no-op
+    const feed=document.getElementById('fc-feed');
+    feed.insertAdjacentHTML('afterbegin',fcHTML(entry));
+  }
+  inp.value='';
+};
+
+function fcHTML(m){
+  return `<div class="fc">
+    <div class="fca ${m.who}">${m.name}</div>
+    <div class="fcb">
+      <div class="fcm"><span class="fcn">${m.name}</span><span>${m.time||''}</span></div>
+      <div class="fcbl">${m.text}</div>
+    </div>
+  </div>`;
+}
+
+function renderFamily(){
+  const msgs=fbReady?fbMessages:[];
+  document.getElementById('fc-feed').innerHTML=msgs.length
+    ? msgs.map(m=>fcHTML(m)).join('')
+    : '<div style="font-size:13px;color:var(--text3);text-align:center;padding:20px">まだメッセージがありません。最初の応援メッセージを送ろう！</div>';
+}
+
+function updateGoalBar(){
+  const th=fbReady?fbTotalH:localState.totalH;
+  const goal=300;
+  const pct=Math.min(Math.round(th/goal*100),100);
+  document.getElementById('goal-bar').style.width=pct+'%';
+  document.getElementById('goal-lbl').textContent=`受験まで約180日・累積 ${th.toFixed(1)}時間 / 目標 ${goal}時間`;
+}
+
+// ── INIT ─────────────────────────────
+(function init(){
+  const hasCfg=localStorage.getItem('fb-apiKey')&&localStorage.getItem('fb-dbUrl');
+  if(hasCfg){
+    document.getElementById('setup-panel').style.display='none';
+    initFirebase();
+  }
+  document.getElementById('streak-n').textContent=localState.streak;
+  setSyncStatus(false);
+  renderLogs();
+  renderStats();
+  renderPlan();
+  renderFamily();
+  updateGoalBar();
+})();
+</script>
+</body>
+</html>
