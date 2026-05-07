@@ -34,7 +34,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .nb.on{color:var(--peach);border-bottom-color:var(--peach)}
 .tab{display:none;padding:16px}
 .tab.on{display:block}
-#tab-ai{padding:0;display:flex;flex-direction:column;height:calc(100vh - 154px)}
+#tab-ai{padding:16px;overflow-y:auto}
 .card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:16px;margin-bottom:14px;box-shadow:var(--sh)}
 .card-title{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .sg{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
@@ -113,6 +113,23 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .dd-item:last-child{border-bottom:none}
 .dd-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .dd-check{font-size:14px;flex-shrink:0}
+
+/* SCHEDULE EVENT */
+.cal-day.has-event{position:relative}
+.cal-day .ev-dot{width:5px;height:5px;border-radius:50%;background:var(--purple);position:absolute;bottom:3px;left:50%;transform:translateX(-50%)}
+.ev-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.ev-item:last-child{border-bottom:none}
+.ev-color{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ev-del{background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0 4px;margin-left:auto}
+
+/* STUDY GOALS */
+.goal-subj-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.goal-subj-name{width:36px;font-size:12px;font-weight:700}
+.goal-subj-bar-bg{flex:1;background:var(--surface2);border-radius:6px;height:12px;overflow:hidden;position:relative}
+.goal-subj-bar-fill{height:100%;border-radius:6px;transition:width .4s}
+.goal-subj-pct{width:36px;font-size:11px;color:var(--text3);text-align:right}
+.goal-week-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:13px}
+.goal-week-val{font-size:20px;font-weight:700;color:var(--peach)}
 
 /* PLAN */
 .ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
@@ -295,6 +312,17 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
     <div id="subj-bd"></div>
   </div>
   <div class="card">
+    <div class="card-title"><i class="ti ti-target"></i>週間学習目標 <button onclick="openStudyGoalModal()" style="margin-left:auto;background:transparent;border:1px solid var(--border2);border-radius:var(--rs);padding:3px 10px;font-size:11px;color:var(--text2);cursor:pointer">設定</button></div>
+    <div class="goal-week-row">
+      <span style="font-size:13px;color:var(--text2)">今週の目標</span>
+      <div><span class="goal-week-val" id="week-goal-val">0</span><span style="font-size:12px;color:var(--text3)"> / <span id="week-goal-target">10</span>時間</span></div>
+    </div>
+    <div style="background:var(--surface2);border-radius:6px;height:10px;overflow:hidden;margin-bottom:14px">
+      <div id="week-goal-bar" style="height:100%;background:var(--peach);border-radius:6px;transition:width .4s;width:0%"></div>
+    </div>
+    <div id="subj-goal-list"></div>
+  </div>
+  <div class="card">
     <div class="card-title"><i class="ti ti-medal"></i>バッジ</div>
     <div class="badges" id="badge-grid"></div>
   </div>
@@ -313,9 +341,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
       <div class="cal-head">水</div><div class="cal-head">木</div><div class="cal-head">金</div><div class="cal-head sat">土</div>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
-    <div style="display:flex;gap:12px;margin-top:10px;font-size:11px;color:var(--text3)">
+    <div style="display:flex;gap:12px;margin-top:10px;font-size:11px;color:var(--text3);flex-wrap:wrap">
       <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--peach-l);border:1px solid var(--peach);display:inline-block"></span>学習あり</span>
       <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--mint-l);border:1px solid var(--mint);display:inline-block"></span>タスク完了あり</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:var(--purple);display:inline-block"></span>予定あり</span>
     </div>
   </div>
   <div id="day-detail-area"></div>
@@ -336,22 +365,40 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 
 <!-- AI -->
 <div id="tab-ai" class="tab">
-  <div class="chat-area" id="chat-area">
-    <div class="msg">
-      <div class="av"><i class="ti ti-robot"></i></div>
-      <div class="bubble">こんにちは！わからないことは何でも聞いてね。問題の解き方・暗記のコツ・やる気が出ない時もOK。一緒に頑張ろう！</div>
+  <!-- 説明カード -->
+  <div class="card" style="background:linear-gradient(135deg,#FFF2EE 0%,#F0ECFF 100%);border-color:rgba(255,128,86,.2)">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <div style="width:44px;height:44px;border-radius:50%;background:var(--peach);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="ti ti-robot" style="font-size:22px;color:white"></i>
+      </div>
+      <div>
+        <div style="font-size:15px;font-weight:700">AI先生</div>
+        <div style="font-size:11px;color:var(--text3)">Claude.ai で質問できます</div>
+      </div>
     </div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:14px">
+      下のボタンで質問テンプレートをコピーして、<strong>Claude.ai</strong>に貼り付けるだけ！<br>わからない問題・暗記のコツ・やる気が出ない時も何でも聞けます。
+    </div>
+    <a href="https://claude.ai" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--peach);color:white;border-radius:var(--rs);padding:13px;font-size:15px;font-weight:700;text-decoration:none;box-shadow:0 3px 12px rgba(255,128,86,.35)">
+      <i class="ti ti-external-link"></i> Claude.ai を開く
+    </a>
   </div>
-  <div class="qa">
-    <button class="qb" onclick="qask('数学の二次方程式のコツを中学生向けに教えてください')">数学コツ</button>
-    <button class="qb" onclick="qask('英語の長文読解が苦手です。コツを教えてください')">英語長文</button>
-    <button class="qb" onclick="qask('都道府県の覚え方を面白く教えてください')">暗記法</button>
-    <button class="qb" onclick="qask('高校受験勉強のやる気が出ません。励ましてください')">やる気UP</button>
-    <button class="qb" onclick="qask('この問題の解き方を分かりやすく教えてください：')">問題を解く</button>
+
+  <!-- テンプレート -->
+  <div class="card">
+    <div class="card-title"><i class="ti ti-clipboard-copy"></i>質問テンプレート（タップでコピー）</div>
+    <div id="template-list"></div>
   </div>
-  <div class="cir">
-    <textarea id="ai-inp" placeholder="質問を入力..." onkeydown="akey(event)"></textarea>
-    <button class="send" onclick="sendMsg()"><i class="ti ti-send"></i></button>
+
+  <!-- 自由入力 -->
+  <div class="card">
+    <div class="card-title"><i class="ti ti-pencil"></i>自分で質問を作る</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:8px">下に質問を書いてコピーし、Claude.aiに貼り付けてください</div>
+    <textarea id="ai-custom" placeholder="質問を入力..." style="width:100%;border:1px solid var(--border2);border-radius:var(--rs);padding:10px 12px;font-size:13px;font-family:inherit;background:var(--surface2);color:var(--text);height:80px;resize:none;outline:none;line-height:1.6"></textarea>
+    <button onclick="copyCustom()" style="width:100%;margin-top:8px;background:var(--purple);color:white;border:none;border-radius:var(--rs);padding:11px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+      <i class="ti ti-copy"></i> コピーする
+    </button>
+    <div id="copy-toast" style="display:none;font-size:12px;color:var(--mint);text-align:center;margin-top:6px;font-weight:700">✅ コピーしました！Claude.aiに貼り付けてね</div>
   </div>
 </div>
 
@@ -416,9 +463,52 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   </div>
 </div>
 
+<!-- 予定追加モーダル -->
+<div class="mbg" id="event-modal-bg">
+  <div class="modal">
+    <h3>📅 予定を追加</h3>
+    <label>日付</label>
+    <input type="date" id="ev-date" style="width:100%;border:1px solid var(--border2);border-radius:var(--rs);padding:10px 12px;font-size:14px;font-family:inherit;background:var(--surface2);color:var(--text);outline:none"/>
+    <label>予定の内容</label>
+    <input type="text" id="ev-text" placeholder="例：模擬試験・学校説明会"/>
+    <label>カテゴリ</label>
+    <select id="ev-cat">
+      <option value="exam">📝 模擬試験・テスト</option>
+      <option value="event">🏫 学校行事</option>
+      <option value="study">📚 特別学習</option>
+      <option value="other">📌 その他</option>
+    </select>
+    <div class="mbtns">
+      <button class="cl" onclick="closeEventModal()">キャンセル</button>
+      <button class="ok" onclick="addEvent()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 学習目標設定モーダル -->
+<div class="mbg" id="studygoal-modal-bg">
+  <div class="modal">
+    <h3>🎯 学習目標を設定</h3>
+    <label>週間目標時間（合計）</label>
+    <input type="text" id="sg-week" placeholder="例：10"/>
+    <label style="margin-top:14px;font-size:13px;font-weight:700;color:var(--text)">教科別 週間目標（時間）</label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <div><label style="font-size:11px">国語</label><input type="text" id="sg-k" placeholder="例：2"/></div>
+      <div><label style="font-size:11px">数学</label><input type="text" id="sg-s" placeholder="例：3"/></div>
+      <div><label style="font-size:11px">英語</label><input type="text" id="sg-e" placeholder="例：3"/></div>
+      <div><label style="font-size:11px">理科</label><input type="text" id="sg-r" placeholder="例：1"/></div>
+      <div><label style="font-size:11px">社会</label><input type="text" id="sg-sh" placeholder="例：1"/></div>
+    </div>
+    <div class="mbtns">
+      <button class="cl" onclick="closeStudyGoalModal()">キャンセル</button>
+      <button class="ok" onclick="saveStudyGoal()">保存する</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getDatabase, ref, push, set, onValue } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+import { getDatabase, ref, push, set, onValue, remove } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
 const SUBJ={k:'国語',s:'数学',e:'英語',r:'理科',sh:'社会'};
 const SCOL={k:'#E24B4A',s:'#378ADD',e:'#1D9E75',r:'#7C5CF6',sh:'#F0A020'};
@@ -442,6 +532,8 @@ let localState=JSON.parse(localStorage.getItem('koko-local')||'null')||{
   weekH:[0,0,0,0,0,0,0],monthH:{k:0,s:0,e:0,r:0,sh:0},totalH:0,
   doneTasks:0, earnedBadges:[],
   goal:{school:'',hours:300,date:''},
+  studyGoal:{week:10,subj:{k:2,s:3,e:3,r:1,sh:1}},
+  lastWeekReset:'',
   planData:[
     {day:'月曜日',tasks:[{text:'数学：二次方程式 p.32-34',subj:'s',done:false,doneDate:null},{text:'英語：単語テスト50問',subj:'e',done:false,doneDate:null}]},
     {day:'火曜日',tasks:[{text:'国語：読解問題1セット',subj:'k',done:false,doneDate:null},{text:'理科：化学変化まとめ',subj:'r',done:false,doneDate:null}]},
@@ -454,6 +546,7 @@ function saveLocal(){localStorage.setItem('koko-local',JSON.stringify(localState
 let db=null,fbReady=false;
 let fbLogs=[],fbPlan=localState.planData,fbMessages=[],fbGoal=localState.goal;
 let fbWeekH=[0,0,0,0,0,0,0],fbMonthH={k:0,s:0,e:0,r:0,sh:0},fbTotalH=0,fbDoneTasks=0,fbStreak=0,fbEarned=[];
+let fbEvents=[],fbStudyGoal=localState.studyGoal,fbLastWeekReset='';
 
 function initFirebase(){
   const cfg={apiKey:localStorage.getItem('fb-apiKey'),authDomain:localStorage.getItem('fb-authDomain'),databaseURL:localStorage.getItem('fb-dbUrl'),projectId:localStorage.getItem('fb-projectId')};
@@ -527,6 +620,49 @@ function subscribeAll(){
     if(v) fbEarned=Array.isArray(v)?v:(typeof v==='object'?Object.values(v):[]);
     if(document.getElementById('tab-stats').classList.contains('on'))renderStats();
   });
+  onValue(ref(db,'events'),snap=>{
+    fbEvents=[];
+    snap.forEach(c=>fbEvents.push({...c.val(),id:c.key}));
+    if(document.getElementById('tab-calendar').classList.contains('on'))renderCalendar();
+  });
+  onValue(ref(db,'studyGoal'),snap=>{
+    const v=snap.val();
+    if(v) fbStudyGoal=v;
+    if(document.getElementById('tab-stats').classList.contains('on'))renderStats();
+  });
+  onValue(ref(db,'lastWeekReset'),snap=>{
+    const v=snap.val();
+    if(v) fbLastWeekReset=v;
+    checkWeekReset();
+  });
+}
+
+// 毎週月曜日に自動リセット
+function getWeekKey(){
+  const now=new Date();
+  const mon=new Date(now);
+  mon.setDate(now.getDate()-((now.getDay()+6)%7));
+  return mon.toISOString().slice(0,10);
+}
+function checkWeekReset(){
+  const thisWeek=getWeekKey();
+  const lastReset=fbReady?fbLastWeekReset:localState.lastWeekReset;
+  if(lastReset===thisWeek) return;
+  // リセット実行
+  const plan=getPlan();
+  plan.forEach(d=>{
+    const tasks=Array.isArray(d.tasks)?d.tasks:Object.values(d.tasks||{});
+    tasks.forEach(t=>{t.done=false;t.doneDate=null;});
+    d.tasks=tasks;
+  });
+  if(fbReady&&db){
+    set(ref(db,'plan'),plan);
+    set(ref(db,'lastWeekReset'),thisWeek);
+  }else{
+    localState.planData=plan;
+    localState.lastWeekReset=thisWeek;
+    saveLocal();renderPlan();
+  }
 }
 
 // バッジチェック（実績連動）
@@ -638,6 +774,26 @@ function renderStats(){
   document.getElementById('bar-chart').innerHTML=wh.map((v,i)=>`<div class="bc"><div class="bval">${v>0?v.toFixed(1):''}</div><div class="bf${i===todayI?' td':''}" style="height:${Math.max(v/maxH*76,3)}px;${v===0?'opacity:.15':''}"></div><div class="bday" style="font-weight:${i===todayI?700:400}">${WEEK[i]}</div></div>`).join('');
   const maxS=Math.max(...Object.values(mh),.1);
   document.getElementById('subj-bd').innerHTML=Object.entries(mh).map(([k,h])=>`<div class="sr"><div class="srn">${SUBJ[k]}</div><div class="srbg"><div class="srf" style="width:${Math.round(h/maxS*100)}%;background:${SCOL[k]};opacity:.75"></div></div><div class="srv">${h.toFixed(1)}h</div></div>`).join('');
+  // 学習目標
+  const sg=fbReady?fbStudyGoal:localState.studyGoal;
+  const weekSum2=weekSum;
+  const wTarget=sg?.week||10;
+  document.getElementById('week-goal-val').textContent=weekSum2.toFixed(1);
+  document.getElementById('week-goal-target').textContent=wTarget;
+  document.getElementById('week-goal-bar').style.width=Math.min(weekSum2/wTarget*100,100)+'%';
+  document.getElementById('subj-goal-list').innerHTML=Object.entries(SUBJ).map(([k,name])=>{
+    const actual=wh.reduce((a,v,i)=>a+v,0)>0?(fbReady?fbWeekH:localState.weekH).reduce((a,v,i)=>a+v,0):0;
+    const subjActual=(fbReady?fbWeekH:localState.weekH).reduce((acc,v,i)=>{
+      const dayLogs=(fbReady?fbLogs:localState.logs).filter(l=>{
+        const now2=Date.now();const weekAgo=now2-7*864e5;
+        return l.ts>weekAgo&&l.subj===k;
+      });
+      return acc;
+    },0)||((fbReady?fbLogs:localState.logs).filter(l=>{const now2=Date.now();return l.ts>now2-7*864e5&&l.subj===k;}).reduce((a,l)=>a+l.mins/60,0));
+    const target=sg?.subj?.[k]||0;
+    const pct=target>0?Math.min(subjActual/target*100,100):0;
+    return `<div class="goal-subj-row"><div class="goal-subj-name" style="color:${SCOL[k]}">${name}</div><div class="goal-subj-bar-bg"><div class="goal-subj-bar-fill" style="width:${pct}%;background:${SCOL[k]};opacity:.75"></div></div><div class="goal-subj-pct">${target>0?Math.round(pct)+'%':'－'}</div></div>`;
+  }).join('');
   const earned=fbReady?fbEarned:localState.earnedBadges;
   document.getElementById('badge-grid').innerHTML=BADGE_DEFS.map(b=>{
     const ok=earned.includes(b.id);
@@ -691,6 +847,19 @@ function renderCalendar(){
     });
   });
 
+  // 予定を日付ごとにまとめる
+  const eventsByDate={};
+  const allEvents=fbReady?fbEvents:localState.events||[];
+  allEvents.forEach(ev=>{
+    if(!ev.date) return;
+    const d=new Date(ev.date);
+    if(d.getFullYear()===calYear&&d.getMonth()===calMonth){
+      const key=d.getDate();
+      if(!eventsByDate[key]) eventsByDate[key]=[];
+      eventsByDate[key].push(ev);
+    }
+  });
+
   const todayKey=now.getFullYear()===calYear&&now.getMonth()===calMonth?now.getDate():null;
   let html='';
   for(let i=0;i<firstDay;i++) html+='<div></div>';
@@ -700,19 +869,22 @@ function renderCalendar(){
     const isToday=d===todayKey;
     const isSel=selectedDate===d;
     const mins=logsByDate[d]||0;
+    const hasEvent=!!eventsByDate[d];
     let cls='cal-day';
     if(isSel) cls+=' selected';
     else if(hasLog&&hasDone) cls+=' has-log has-done';
     else if(hasLog) cls+=' has-log';
     else if(hasDone) cls+=' has-done';
     if(isToday&&!isSel) cls+=' today';
+    if(hasEvent) cls+=' has-event';
     const minsLabel=mins>=60?`${Math.floor(mins/60)}h${mins%60?mins%60+'m':''}`:mins>0?`${mins}m`:'';
-    html+=`<div class="${cls}" onclick="selectCalDay(${d})"><div class="dn">${d}</div>${minsLabel?`<div class="dt">${minsLabel}</div>`:''}</div>`;
+    html+=`<div class="${cls}" onclick="selectCalDay(${d})"><div class="dn">${d}</div>${minsLabel?`<div class="dt">${minsLabel}</div>`:''} ${hasEvent?'<div class="ev-dot"></div>':''}</div>`;
   }
   document.getElementById('cal-grid').innerHTML=html;
 
   if(selectedDate){
-    showDayDetail(selectedDate,logsByDate[selectedDate]||0,doneByDate[selectedDate]||[],getLogs().filter(l=>{const dd=new Date(l.ts);return dd.getFullYear()===calYear&&dd.getMonth()===calMonth&&dd.getDate()===selectedDate;}));
+    const dayEvs=(eventsByDate[selectedDate]||[]);
+    showDayDetail(selectedDate,logsByDate[selectedDate]||0,doneByDate[selectedDate]||[],getLogs().filter(l=>{const dd=new Date(l.ts);return dd.getFullYear()===calYear&&dd.getMonth()===calMonth&&dd.getDate()===selectedDate;}),dayEvs);
   }
 }
 
@@ -721,29 +893,82 @@ window.selectCalDay=function(d){
   renderCalendar();
 };
 
-function showDayDetail(d,mins,doneTasks,dayLogs){
+function showDayDetail(d,mins,doneTasks,dayLogs,dayEvents){
   const dateStr=`${calYear}年${calMonth+1}月${d}日`;
-  let html=`<div class="day-detail"><div class="dd-title">${dateStr}の記録</div>`;
-  if(dayLogs.length===0&&doneTasks.length===0){
+  const dateVal=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const CAT={exam:'📝 模擬試験・テスト',event:'🏫 学校行事',study:'📚 特別学習',other:'📌 その他'};
+  let html=`<div class="day-detail">
+    <div class="dd-title" style="display:flex;align-items:center;justify-content:space-between">${dateStr}の記録
+      <button onclick="openEventModal('${dateVal}')" style="background:var(--purple);color:#fff;border:none;border-radius:var(--rs);padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit">＋予定追加</button>
+    </div>`;
+  if(dayEvents&&dayEvents.length>0){
+    html+='<div style="font-size:12px;font-weight:700;color:var(--purple);margin-bottom:6px;margin-top:8px">📅 予定</div>';
+    dayEvents.forEach(ev=>{
+      html+=`<div class="ev-item"><div class="ev-color" style="background:var(--purple)"></div><span style="flex:1">${ev.text}</span><span style="font-size:10px;color:var(--text3)">${CAT[ev.cat]?.split(' ')[0]||'📌'}</span><button class="ev-del" onclick="deleteEvent('${ev.id}')">🗑</button></div>`;
+    });
+  }
+  if(dayLogs.length===0&&doneTasks.length===0&&(!dayEvents||!dayEvents.length)){
     html+='<div style="font-size:13px;color:var(--text3);text-align:center;padding:10px 0">この日の記録はありません</div>';
   }else{
     if(dayLogs.length>0){
-      html+='<div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:6px">学習ログ</div>';
-      dayLogs.forEach(l=>{
-        html+=`<div class="dd-item"><div class="dd-dot" style="background:${SCOL[l.subj]}"></div><span style="font-weight:700;color:${SCOL[l.subj]}">${SUBJ[l.subj]}</span><span style="flex:1"></span><span>${l.mins}分</span></div>`;
-      });
+      html+='<div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:6px;margin-top:8px">学習ログ</div>';
+      dayLogs.forEach(l=>{html+=`<div class="dd-item"><div class="dd-dot" style="background:${SCOL[l.subj]}"></div><span style="font-weight:700;color:${SCOL[l.subj]}">${SUBJ[l.subj]}</span><span style="flex:1"></span><span>${l.mins}分</span></div>`;});
       html+=`<div style="font-size:12px;color:var(--text3);text-align:right;margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">合計 ${mins}分</div>`;
     }
     if(doneTasks.length>0){
       html+='<div style="font-size:12px;font-weight:700;color:var(--text3);margin:10px 0 6px">完了タスク</div>';
-      doneTasks.forEach(t=>{
-        html+=`<div class="dd-item"><div class="dd-check">✅</div><span style="flex:1">${t.text}</span><div class="ttag" style="background:${SCOL[t.subj]}20;color:${SCOL[t.subj]}">${SUBJ[t.subj]}</div></div>`;
-      });
+      doneTasks.forEach(t=>{html+=`<div class="dd-item"><div class="dd-check">✅</div><span style="flex:1">${t.text}</span><div class="ttag" style="background:${SCOL[t.subj]}20;color:${SCOL[t.subj]}">${SUBJ[t.subj]}</div></div>`;});
     }
   }
   html+='</div>';
   document.getElementById('day-detail-area').innerHTML=html;
 }
+
+// EVENTS
+window.openEventModal=function(dateVal){
+  document.getElementById('ev-date').value=dateVal||'';
+  document.getElementById('ev-text').value='';
+  document.getElementById('event-modal-bg').classList.add('open');
+};
+window.closeEventModal=()=>document.getElementById('event-modal-bg').classList.remove('open');
+window.addEvent=function(){
+  const date=document.getElementById('ev-date').value;
+  const text=document.getElementById('ev-text').value.trim();
+  const cat=document.getElementById('ev-cat').value;
+  if(!date||!text){alert('日付と内容を入力してください');return;}
+  const entry={date,text,cat,ts:Date.now()};
+  if(fbReady&&db){push(ref(db,'events'),entry);}
+  else{
+    if(!localState.events) localState.events=[];
+    localState.events.push({...entry,id:'local-'+Date.now()});
+    saveLocal();renderCalendar();
+  }
+  closeEventModal();
+};
+window.deleteEvent=function(id){
+  if(!confirm('この予定を削除しますか？'))return;
+  if(fbReady&&db){remove(ref(db,'events/'+id));}
+  else{
+    localState.events=(localState.events||[]).filter(e=>e.id!==id);
+    saveLocal();renderCalendar();
+  }
+};
+
+// STUDY GOAL
+window.openStudyGoalModal=function(){
+  const sg=fbReady?fbStudyGoal:localState.studyGoal;
+  document.getElementById('sg-week').value=sg?.week||10;
+  ['k','s','e','r','sh'].forEach(k=>document.getElementById('sg-'+k).value=sg?.subj?.[k]||0);
+  document.getElementById('studygoal-modal-bg').classList.add('open');
+};
+window.closeStudyGoalModal=()=>document.getElementById('studygoal-modal-bg').classList.remove('open');
+window.saveStudyGoal=function(){
+  const sg={week:parseFloat(document.getElementById('sg-week').value)||10,subj:{}};
+  ['k','s','e','r','sh'].forEach(k=>sg.subj[k]=parseFloat(document.getElementById('sg-'+k).value)||0);
+  if(fbReady&&db){set(ref(db,'studyGoal'),sg);}
+  else{localState.studyGoal=sg;saveLocal();renderStats();}
+  closeStudyGoalModal();
+};
 
 // PLAN
 function getPlan(){return fbReady?(Array.isArray(fbPlan)?fbPlan:Object.values(fbPlan||{})):localState.planData;}
@@ -825,29 +1050,56 @@ function updateGoalDisplay(){
 }
 function updateGoalBar(){updateGoalDisplay();}
 
-// AI
-let chatHist=[];
-window.qask=function(q){document.getElementById('ai-inp').value=q;document.getElementById('ai-inp').focus();};
-window.akey=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}};
-window.sendMsg=async function(){
-  const inp=document.getElementById('ai-inp');
-  const text=inp.value.trim();if(!text)return;inp.value='';
-  chatHist.push({role:'user',content:text});
-  const area=document.getElementById('chat-area');
-  area.insertAdjacentHTML('beforeend',`<div class="msg user"><div class="av u"><i class="ti ti-user"></i></div><div class="bubble u">${text}</div></div>`);
-  const lid='ld'+Date.now();
-  area.insertAdjacentHTML('beforeend',`<div class="msg" id="${lid}"><div class="av"><i class="ti ti-robot"></i></div><div class="bubble ld">考え中...</div></div>`);
-  area.scrollTop=area.scrollHeight;
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`あなたは中学3年生の高校受験勉強をサポートするAI家庭教師「AI先生」です。優しく明るく励ましながら教えてください。難しい言葉は避け具体例で分かりやすく。間違いを恐れず何でも聞ける雰囲気を大切に。回答は300字以内でコンパクトに。やる気を引き出す一言を最後に添えてください。`,messages:chatHist})});
-    const data=await res.json();
-    const reply=data.content?.[0]?.text||'うまく答えられませんでした。もう一度聞いてみてね！';
-    chatHist.push({role:'assistant',content:reply});
-    document.querySelector(`#${lid} .bubble`).textContent=reply;
-    document.querySelector(`#${lid} .bubble`).classList.remove('ld');
-  }catch(e){document.querySelector(`#${lid} .bubble`).textContent='エラーが発生しました。もう一度試してね。';}
-  area.scrollTop=area.scrollHeight;
+// AI先生テンプレート
+const AI_TEMPLATES=[
+  {icon:'📐',subj:'数学',color:'var(--blue)',text:'中学3年生向けに教えてください。\n\n【質問】数学の___について、解き方のコツを分かりやすく教えてください。具体的な例題も一緒に示してください。'},
+  {icon:'📖',subj:'英語',color:'var(--green)',text:'中学3年生向けに教えてください。\n\n【質問】英語の___が苦手です。コツや覚え方を教えてください。'},
+  {icon:'✏️',subj:'国語',color:'var(--red)',text:'中学3年生向けに教えてください。\n\n【質問】国語の___について教えてください。ポイントをシンプルにまとめてください。'},
+  {icon:'🔬',subj:'理科',color:'var(--purple)',text:'中学3年生向けに教えてください。\n\n【質問】理科の___の仕組みを、図やたとえを使って分かりやすく説明してください。'},
+  {icon:'🌍',subj:'社会',color:'var(--amber)',text:'中学3年生向けに教えてください。\n\n【質問】社会の___を覚えるための効果的な暗記法を教えてください。'},
+  {icon:'💪',subj:'やる気UP',color:'var(--peach)',text:'高校受験に向けて勉強しているのですが、今日はやる気が出ません。励ましてください。そして今日取り組むと効果的な勉強法を1つ提案してください。'},
+  {icon:'📝',subj:'問題を解く',color:'var(--mint)',text:'中学3年生です。以下の問題の解き方を、手順を分けて丁寧に教えてください。\n\n【問題】\n（ここに問題を貼り付けてください）'},
+];
+
+function renderAITemplates(){
+  document.getElementById('template-list').innerHTML=AI_TEMPLATES.map((t,i)=>`
+    <div onclick="copyTemplate(${i})" style="display:flex;align-items:center;gap:12px;padding:11px 12px;background:var(--surface2);border-radius:var(--rs);margin-bottom:8px;cursor:pointer;border:1px solid var(--border);transition:all .15s;active:opacity:.8">
+      <div style="width:34px;height:34px;border-radius:50%;background:${t.color}20;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${t.icon}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:${t.color}">${t.subj}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${t.text.split('\n')[0]}</div>
+      </div>
+      <i class="ti ti-copy" style="color:var(--text3);font-size:16px"></i>
+    </div>
+  `).join('');
+}
+
+window.copyTemplate=function(i){
+  const text=AI_TEMPLATES[i].text;
+  navigator.clipboard.writeText(text).then(()=>{
+    showToast();
+  }).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    showToast();
+  });
 };
+
+window.copyCustom=function(){
+  const text=document.getElementById('ai-custom').value.trim();
+  if(!text){alert('質問を入力してください');return;}
+  navigator.clipboard.writeText(text).then(()=>showToast()).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    showToast();
+  });
+};
+
+function showToast(){
+  const t=document.getElementById('copy-toast');
+  t.style.display='block';
+  setTimeout(()=>t.style.display='none',2500);
+}
 
 // FAMILY
 let selWho='papa';
@@ -877,7 +1129,8 @@ function renderFamily(){
   if(hasCfg){document.getElementById('setup-panel').style.display='none';initFirebase();}
   document.getElementById('streak-n').textContent=localState.streak||0;
   setSyncStatus(false);
-  renderLogs();renderStats();renderPlan();renderFamily();renderCalendar();updateGoalDisplay();
+  checkWeekReset();
+  renderLogs();renderStats();renderPlan();renderFamily();renderCalendar();updateGoalDisplay();renderAITemplates();
 })();
 </script>
 </body>
